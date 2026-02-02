@@ -75,10 +75,16 @@ class TeamStanding:
     points: int = 0
     score_for: int = 0
     score_against: int = 0
+    tiebreaker_score_for: int = 0
+    tiebreaker_score_against: int = 0
     
     @property
     def score_difference(self):
         return self.score_for - self.score_against
+    
+    @property
+    def tiebreaker_score_difference(self):
+        return self.tiebreaker_score_for - self.tiebreaker_score_against
     
     def to_dict(self):
         return {
@@ -92,5 +98,8 @@ class TeamStanding:
             "points": self.points,
             "score_for": self.score_for,
             "score_against": self.score_against,
-            "score_difference": self.score_difference
+            "score_difference": self.score_difference,
+            "tiebreaker_score_for": self.tiebreaker_score_for,
+            "tiebreaker_score_against": self.tiebreaker_score_against,
+            "tiebreaker_score_difference": self.tiebreaker_score_difference
         }

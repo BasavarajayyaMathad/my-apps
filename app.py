@@ -561,6 +561,28 @@ def render_match_list(matches, key_prefix: str = "default"):
     """
     can_update = PermissionChecker.check_update_match()
     
+    if not matches:
+        st.info("No matches found")
+        return
+    
+    # Collapse/Expand buttons
+    col1, col2, col3, col4 = st.columns([1, 1, 2, 2])
+    with col1:
+        if st.button("📂 Expand All", key=f"{key_prefix}_expand_all", use_container_width=True):
+            # Set all expanders to expanded state by adding to session state
+            for match in matches:
+                st.session_state[f"{key_prefix}_expander_{match.match_id}"] = True
+            st.rerun()
+    
+    with col2:
+        if st.button("📁 Collapse All", key=f"{key_prefix}_collapse_all", use_container_width=True):
+            # Set all expanders to collapsed state
+            for match in matches:
+                st.session_state[f"{key_prefix}_expander_{match.match_id}"] = False
+            st.rerun()
+    
+    st.divider()
+    
     for match in matches:
         status_icon = TournamentConfig.VISUAL_INDICATORS.get(match.status, "")
         
@@ -568,78 +590,141 @@ def render_match_list(matches, key_prefix: str = "default"):
         t1_key = f"{key_prefix}_t1_{match.match_id}"
         t2_key = f"{key_prefix}_t2_{match.match_id}"
         update_key = f"{key_prefix}_update_{match.match_id}"
+        expander_key = f"{key_prefix}_expander_{match.match_id}"
+        
+        # Determine if this expander should be expanded
+        default_expanded = match.status != "completed"
+        is_expanded = st.session_state.get(expander_key, default_expanded)
         
         with st.expander(
             f"{status_icon} Match {match.match_id}: {match.team1_name} vs {match.team2_name}",
-            expanded=(match.status != "completed")
+            expanded=is_expanded
         ):
-            col1, col2, col3 = st.columns([2, 2, 1])
+            # Match Information Section
+            st.markdown("#### Match Information")
+            info_col1, info_col2, info_col3 = st.columns(3)
             
-            with col1:
-                st.markdown(f"**Stage:** {TournamentConfig.STAGES.get(match.stage, match.stage)}")
+            with info_col1:
+                stage_name = TournamentConfig.STAGES.get(match.stage, match.stage)
+                st.write(f"**Stage:** {stage_name}")
+            
+            with info_col2:
                 if match.group:
-                    st.markdown(f"**Group:** {match.group}")
+                    st.write(f"**Group:** {match.group}")
+            
+            with info_col3:
                 if match.scheduled_time:
-                    st.markdown(f"**Time:** {match.scheduled_time.strftime('%Y-%m-%d %H:%M')}")
+                    time_str = match.scheduled_time.strftime('%Y-%m-%d %H:%M')
+                    st.write(f"**Time:** {time_str}")
             
-            with col2:
-                if match.status == "completed":
-                    winner_indicator = TournamentConfig.VISUAL_INDICATORS['win']
-                    t1_ind = winner_indicator if match.winner_id == match.team1_id else ""
-                    t2_ind = winner_indicator if match.winner_id == match.team2_id else ""
-                    
-                    st.markdown(f"**{t1_ind} {match.team1_name}:** {match.team1_score}")
-                    st.markdown(f"**{t2_ind} {match.team2_name}:** {match.team2_score}")
-                    
-                    if match.winner_name:
-                        st.success(f"Winner: {match.winner_name}")
+            st.divider()
+            
+            # Score and Winner Section
+            if match.status == "completed":
+                st.markdown("#### Current Result")
+                
+                winner_indicator = TournamentConfig.VISUAL_INDICATORS['win']
+                t1_ind = winner_indicator if match.winner_id == match.team1_id else ""
+                t2_ind = winner_indicator if match.winner_id == match.team2_id else ""
+                
+                # Display teams and scores clearly
+                result_col1, result_col2, result_col3 = st.columns([1.5, 1, 1.5])
+                
+                with result_col1:
+                    st.write(f"**{t1_ind} {match.team1_name}**")
+                    st.markdown(f"### {match.team1_score}")
+                
+                with result_col2:
+                    st.write("**vs**")
+                
+                with result_col3:
+                    st.write(f"**{t2_ind} {match.team2_name}**")
+                    st.markdown(f"### {match.team2_score}")
+                
+                if match.winner_name and match.winner_name != "Draw":
+                    st.success(f"🏆 Winner: {match.winner_name}")
+                elif match.winner_name == "Draw":
+                    st.info("🤝 Result: Draw")
+                
+                if can_update:
+                    st.divider()
+                    st.markdown("#### Edit Match Result")
+            else:
+                if can_update:
+                    st.markdown("#### Enter Match Result")
                 else:
-                    # Score input (editable only for admins)
-                    if can_update:
-                        st.markdown("**Enter Scores:**")
-                        score_col1, score_col2 = st.columns(2)
-                        
-                        with score_col1:
-                            st.number_input(
-                                match.team1_name,
-                                min_value=0,
-                                max_value=100,
-                                value=match.team1_score,
-                                key=t1_key
-                            )
-                        
-                        with score_col2:
-                            st.number_input(
-                                match.team2_name,
-                                min_value=0,
-                                max_value=100,
-                                value=match.team2_score,
-                                key=t2_key
-                            )
-                    else:
-                        st.info("🔒 Only Admins can update match scores")
+                    st.info("🔒 Only Admins can update match scores")
             
-            with col3:
-                if match.status != "completed" and can_update:
-                    if st.button("✅ Update", key=update_key):
-                        # Get values from session state and ensure they are integers
-                        score1 = int(st.session_state.get(t1_key, 0))
-                        score2 = int(st.session_state.get(t2_key, 0))
-                        
-                        st.session_state.engine.update_match_result(
-                            match.match_id,
-                            score1,
-                            score2
-                        )
-                        save_tournament()
-                        
-                        # Log action
-                        from user_manager import UserManager
-                        user_manager = UserManager()
-                        user = StreamlitAuthManager.get_current_user()
-                        user_manager.log_action(user.email if user else None, f"Updated match {match.match_id} score to {score1}-{score2}")
-                        
-                        st.rerun()
+            # Update form (for both pending and completed matches if admin)
+            if can_update:
+                # Score inputs with clear team labels
+                st.markdown("**Scores:**")
+                
+                score_col1, score_col2, score_col3 = st.columns([1.8, 1.8, 0.4])
+                
+                with score_col1:
+                    st.write(f"**{match.team1_name}**")
+                    score1 = st.number_input(
+                        label=f"Score for {match.team1_name}",
+                        min_value=0,
+                        max_value=100,
+                        value=match.team1_score,
+                        key=t1_key,
+                        label_visibility="collapsed"
+                    )
+                
+                with score_col2:
+                    st.write(f"**{match.team2_name}**")
+                    score2 = st.number_input(
+                        label=f"Score for {match.team2_name}",
+                        min_value=0,
+                        max_value=100,
+                        value=match.team2_score,
+                        key=t2_key,
+                        label_visibility="collapsed"
+                    )
+                
+                st.markdown("**Select Winner:**")
+                winner_key = f"winner_{match.match_id}"
+                winner_options = [
+                    ("Draw", None),
+                    (match.team1_name, match.team1_id),
+                    (match.team2_name, match.team2_id)
+                ]
+                
+                selected_winner_name = st.selectbox(
+                    label="Winner",
+                    options=[opt[0] for opt in winner_options],
+                    key=winner_key,
+                    index=0,
+                    label_visibility="collapsed"
+                )
+                
+                # Update button with better spacing
+                st.markdown("")
+                if st.button("✅ Update Match Result", key=update_key, use_container_width=True, type="primary"):
+                    winner_id = next(
+                        (opt[1] for opt in winner_options if opt[0] == selected_winner_name),
+                        None
+                    )
+                    
+                    st.session_state.engine.update_match_result(
+                        match.match_id,
+                        score1,
+                        score2,
+                        winner_id
+                    )
+                    save_tournament()
+                    
+                    # Log action
+                    from user_manager import UserManager
+                    user_manager = UserManager()
+                    user = StreamlitAuthManager.get_current_user()
+                    action_type = "Updated" if match.status == "completed" else "Recorded"
+                    user_manager.log_action(user.email if user else None, f"{action_type} match {match.match_id} score to {score1}-{score2}, winner: {selected_winner_name}")
+                    
+                    st.success(f"✅ Match {match.match_id} updated successfully!")
+                    st.rerun()
 
 
 def render_knockout_stage(stage: str):
@@ -734,13 +819,15 @@ def render_nlp_interface():
         if action == "UPDATE_SCORE":
             match_id = params.get('match_id')
             if match_id:
+                # NLP commands only update scores; winner must be set via UI
                 st.session_state.engine.update_match_result(
                     match_id,
                     params.get('team1_score', 0),
-                    params.get('team2_score', 0)
+                    params.get('team2_score', 0),
+                    winner_id=None  # NLP doesn't specify winner - this marks as draw
                 )
                 save_tournament()
-                st.success("✅ Score updated!")
+                st.warning("⚠️ Score updated but winner marked as Draw. Please use the UI to explicitly select the match winner.")
                 st.rerun()
             else:
                 st.warning("Please specify match ID")
@@ -840,6 +927,147 @@ def render_analytics():
         st.metric("Remaining", total_matches - completed_matches)
 
 
+def load_payment_data():
+    """Load payment data from JSON file"""
+    import json
+    payment_file = "users_paid.json"
+    if os.path.exists(payment_file):
+        try:
+            with open(payment_file, 'r') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+
+def save_payment_data(data):
+    """Save payment data to JSON file"""
+    import json
+    payment_file = "users_paid.json"
+    try:
+        with open(payment_file, 'w') as f:
+            json.dump(data, f, indent=2)
+        return True
+    except Exception as e:
+        st.error(f"Error saving payment data: {e}")
+        return False
+
+
+def render_payment_tracking():
+    """Render payment tracking tab for participants"""
+    st.markdown("### 💰 Participant Payment Tracking")
+    
+    # Get all unique participants from teams
+    participants_set = set()
+    for team in st.session_state.engine.teams:
+        participants_set.update(team.participants)
+    
+    participants_list = sorted(list(participants_set))
+    
+    if not participants_list:
+        st.info("No participants found. Please initialize the tournament first.")
+        return
+    
+    # Load existing payment data
+    payment_data = load_payment_data()
+    
+    # Create a dataframe for display
+    payment_records = []
+    for participant in participants_list:
+        is_paid = payment_data.get(participant, False)
+        payment_records.append({
+            "Participant": participant,
+            "Paid": is_paid
+        })
+    
+    st.markdown("#### Participant Payment Status")
+    
+    # Display with checkboxes
+    col1, col2 = st.columns([3, 1])
+    
+    with col1:
+        st.markdown("**Name**")
+    with col2:
+        st.markdown("**Paid** ✓")
+    
+    st.divider()
+    
+    # Create checkboxes for each participant
+    updated_payment_data = {}
+    for idx, participant in enumerate(participants_list):
+        col1, col2 = st.columns([3, 1])
+        
+        with col1:
+            st.write(participant)
+        
+        with col2:
+            is_paid = st.checkbox(
+                label="Paid",
+                value=payment_data.get(participant, False),
+                key=f"payment_{participant}",
+                label_visibility="collapsed"
+            )
+            updated_payment_data[participant] = is_paid
+    
+    st.divider()
+    
+    # Save button
+    if st.button("💾 Save Payment Status", type="primary", use_container_width=True):
+        if save_payment_data(updated_payment_data):
+            st.success("✅ Payment status saved successfully!")
+            
+            # Log action
+            from user_manager import UserManager
+            user_manager = UserManager()
+            user = StreamlitAuthManager.get_current_user()
+            paid_count = sum(1 for v in updated_payment_data.values() if v)
+            user_manager.log_action(user.email if user else None, f"Updated payment status: {paid_count}/{len(participants_list)} participants paid")
+            
+            st.rerun()
+    
+    # Display summary
+    st.markdown("---")
+    st.markdown("#### Summary")
+    
+    paid_count = sum(1 for v in updated_payment_data.values() if v)
+    total_count = len(participants_list)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Total Participants", total_count)
+    
+    with col2:
+        st.metric("Paid", paid_count)
+    
+    with col3:
+        st.metric("Pending", total_count - paid_count)
+    
+    # Pending payments list
+    if total_count - paid_count > 0:
+        st.markdown("#### Pending Payments")
+        pending = [p for p in participants_list if not updated_payment_data.get(p, False)]
+        for p in pending:
+            st.write(f"• {p}")
+    
+    # Export payment data
+    st.markdown("---")
+    st.markdown("#### Export Payment Data")
+    
+    export_df = pd.DataFrame([
+        {"Participant": p, "Status": "Paid" if updated_payment_data.get(p, False) else "Pending"}
+        for p in participants_list
+    ])
+    
+    csv = export_df.to_csv(index=False)
+    st.download_button(
+        "📥 Download Payment Report (CSV)",
+        csv,
+        "payment_report.csv",
+        "text/csv"
+    )
+
+
 def render_admin_panel():
     """Render admin panel for user management"""
     st.markdown('<div class="main-header">⚙️ Admin Panel</div>', unsafe_allow_html=True)
@@ -853,7 +1081,7 @@ def render_admin_panel():
     user_manager = UserManager()
     
     # Admin tabs
-    admin_tabs = st.tabs(["👥 User Management", "📋 Audit Log"])
+    admin_tabs = st.tabs(["👥 User Management", "� Payments", "�📋 Audit Log"])
     
     with admin_tabs[0]:
         st.markdown("### 👥 Manage Users")
@@ -970,6 +1198,9 @@ def render_admin_panel():
             st.info("No users found")
     
     with admin_tabs[1]:
+        render_payment_tracking()
+    
+    with admin_tabs[2]:
         st.markdown("### 📋 Audit Log")
         
         # Get audit log

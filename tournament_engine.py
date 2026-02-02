@@ -43,6 +43,8 @@ class TournamentEngine:
             standing.points = 0
             standing.score_for = 0
             standing.score_against = 0
+            standing.tiebreaker_score_for = 0
+            standing.tiebreaker_score_against = 0
         
         # Recalculate from all completed matches
         for match in self.matches:
@@ -212,8 +214,19 @@ class TournamentEngine:
         
         return matches
     
-    def update_match_result(self, match_id: int, team1_score: int, team2_score: int) -> Match:
-        """Update match result and standings"""
+    def update_match_result(self, match_id: int, team1_score: int, team2_score: int, winner_id: Optional[int] = None) -> Match:
+        """Update match result and standings
+        
+        Args:
+            match_id: ID of the match to update
+            team1_score: Score for team 1 (used for tiebreaker only)
+            team2_score: Score for team 2 (used for tiebreaker only)
+            winner_id: ID of the winning team (optional). If None, match is marked as draw.
+                      This is independent of scores and determines who gets 2 points.
+        
+        Returns:
+            Updated Match object
+        """
         match = next((m for m in self.matches if m.match_id == match_id), None)
         
         if not match:
@@ -223,14 +236,15 @@ class TournamentEngine:
         match.team2_score = team2_score
         match.status = "completed"
         
-        # Determine winner
-        if team1_score > team2_score:
+        # Set winner based on winner_id parameter, not score comparison
+        if winner_id == match.team1_id:
             match.winner_id = match.team1_id
             match.winner_name = match.team1_name
-        elif team2_score > team1_score:
+        elif winner_id == match.team2_id:
             match.winner_id = match.team2_id
             match.winner_name = match.team2_name
         else:
+            # No explicit winner means draw
             match.winner_id = None
             match.winner_name = "Draw"
         
@@ -240,15 +254,25 @@ class TournamentEngine:
         return match
     
     def _update_standings(self, match: Match):
-        """Update team standings after a match"""
+        """Update team standings after a match
+        
+        Note: 
+        - winner_id determines match winner (2 points awarded)
+        - Scores are tracked separately for tiebreaking purposes
+        - If teams have equal points, tiebreaker_score_difference is used
+        """
         team1_standing = self.standings.get(match.team1_id)
         team2_standing = self.standings.get(match.team2_id)
         
         if team1_standing:
             team1_standing.matches_played += 1
+            # Always add scores to both regular and tiebreaker tracking
             team1_standing.score_for += match.team1_score
             team1_standing.score_against += match.team2_score
+            team1_standing.tiebreaker_score_for += match.team1_score
+            team1_standing.tiebreaker_score_against += match.team2_score
             
+            # Winner points are based on winner_id, not on score comparison
             if match.winner_id == match.team1_id:
                 team1_standing.wins += 1
                 team1_standing.points += self.config.POINTS_PER_WIN
@@ -261,9 +285,13 @@ class TournamentEngine:
         
         if team2_standing:
             team2_standing.matches_played += 1
+            # Always add scores to both regular and tiebreaker tracking
             team2_standing.score_for += match.team2_score
             team2_standing.score_against += match.team1_score
+            team2_standing.tiebreaker_score_for += match.team2_score
+            team2_standing.tiebreaker_score_against += match.team1_score
             
+            # Winner points are based on winner_id, not on score comparison
             if match.winner_id == match.team2_id:
                 team2_standing.wins += 1
                 team2_standing.points += self.config.POINTS_PER_WIN
@@ -275,14 +303,20 @@ class TournamentEngine:
                 team2_standing.points += self.config.POINTS_PER_DRAW
     
     def get_group_standings(self, group: str = None) -> List[TeamStanding]:
-        """Get standings for a group or all teams"""
+        """Get standings for a group or all teams
+        
+        Sorting criteria (in order):
+        1. Points (higher is better) - Winner is based on match winner, not score
+        2. Tiebreaker score difference (higher is better) - Used only when points are equal
+        3. Tiebreaker score for (higher is better) - Used only when points and score diff are equal
+        """
         standings_list = list(self.standings.values())
         
         if group:
             standings_list = [s for s in standings_list if s.group == group]
         
-        # Sort by points, then score difference, then score for
-        standings_list.sort(key=lambda x: (-x.points, -x.score_difference, -x.score_for))
+        # Sort by points first, then use tiebreaker scores if points are equal
+        standings_list.sort(key=lambda x: (-x.points, -x.tiebreaker_score_difference, -x.tiebreaker_score_for))
         
         return standings_list
     
@@ -478,7 +512,9 @@ class TournamentEngine:
                     draws=int(row.get('draws', 0)),
                     points=int(row.get('points', 0)),
                     score_for=int(row.get('score_for', 0)),
-                    score_against=int(row.get('score_against', 0))
+                    score_against=int(row.get('score_against', 0)),
+                    tiebreaker_score_for=int(row.get('tiebreaker_score_for', 0)),
+                    tiebreaker_score_against=int(row.get('tiebreaker_score_against', 0))
                 )
                 self.standings[standing.team_id] = standing
             

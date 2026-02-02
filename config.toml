@@ -18,7 +18,7 @@ NUMBER_OF_GROUPS = 2
 # Get credentials from: https://console.cloud.google.com/
 GOOGLE_CLIENT_ID = "1033928895605-2rfh15bs90f0qvhmc1gqijo4l557sfea.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET = "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"
-GOOGLE_REDIRECT_URI = "https://apcarromtournament.streamlit.app/"
+GOOGLE_REDIRECT_URI = "https://apcarromtournament.streamlit.app"
 
 # Initial Admin Email (set this when first deploying)
 # This email will be automatically promoted to admin on first login

@@ -416,7 +416,21 @@ def render_group_stage():
     col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])
     with col1:
         if st.button("🔄 Refresh Standings", use_container_width=True):
-            st.rerun()
+            # Reload tournament data from Excel file
+            results_file = TournamentConfig.RESULTS_FILE
+            if os.path.exists(results_file):
+                try:
+                    if st.session_state.engine.load_from_excel(results_file):
+                        # Rebuild groups
+                        st.session_state.groups = {}
+                        for team in st.session_state.engine.teams:
+                            if team.group not in st.session_state.groups:
+                                st.session_state.groups[team.group] = []
+                            st.session_state.groups[team.group].append(team)
+                        st.success("✅ Standings refreshed successfully!")
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Error refreshing standings: {e}")
     
     # Group tabs
     groups = sorted(st.session_state.groups.keys())

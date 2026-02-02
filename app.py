@@ -348,8 +348,7 @@ def render_setup_page():
             end_date = st.date_input(
                 "Tournament End Date",
                 value=st.session_state.selected_end_date,
-                key="tournament_end_date",
-                min_value=start_date
+                key="tournament_end_date"
             )
             st.session_state.selected_end_date = end_date
         

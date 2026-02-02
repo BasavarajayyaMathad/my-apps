@@ -183,17 +183,32 @@ class TournamentEngine:
         self.matches = all_matches
         return all_matches
     
-    def schedule_matches(self, start_time: datetime, matches: List[Match] = None) -> List[Match]:
-        """Schedule matches with start and end times"""
+    def schedule_matches(self, start_time: datetime, matches: List[Match] = None, parallel_matches: int = 1) -> List[Match]:
+        """
+        Schedule matches with start and end times
+        
+        Args:
+            start_time: Tournament start datetime
+            matches: List of matches to schedule (defaults to all matches)
+            parallel_matches: Number of matches running in parallel (default 1, can be 2 or more)
+        """
         if matches is None:
             matches = self.matches
         
         current_time = start_time
+        match_index = 0
         
-        for match in matches:
-            match.scheduled_time = current_time
-            match.end_time = current_time + timedelta(minutes=self.config.MATCH_DURATION_MINUTES)
-            current_time = match.end_time
+        while match_index < len(matches):
+            # Schedule up to parallel_matches matches at the same time
+            for _ in range(parallel_matches):
+                if match_index < len(matches):
+                    match = matches[match_index]
+                    match.scheduled_time = current_time
+                    match.end_time = current_time + timedelta(minutes=self.config.MATCH_DURATION_MINUTES)
+                    match_index += 1
+            
+            # Move to next time slot after all parallel matches end
+            current_time = current_time + timedelta(minutes=self.config.MATCH_DURATION_MINUTES)
         
         return matches
     

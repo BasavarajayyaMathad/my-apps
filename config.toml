@@ -1,0 +1,25 @@
+# OpenAI API Key for NLP features
+OPENAI_API_KEY = "your_openai_api_key_here"
+
+# Tournament Configuration
+MATCH_DURATION_MINUTES = 20
+POINTS_PER_WIN = 2
+
+# Number of Groups (2 or 4)
+# - 2 groups: Top 4 teams qualify from each group (8 total)
+# - 4 groups: Top 2 teams qualify from each group (8 total)
+NUMBER_OF_GROUPS = 2
+
+# =============================================================================
+# OAUTH AUTHENTICATION - Email-based Login (Google)
+# =============================================================================
+
+# Google OAuth Configuration
+# Get credentials from: https://console.cloud.google.com/
+GOOGLE_CLIENT_ID = "1033928895605-2rfh15bs90f0qvhmc1gqijo4l557sfea.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
+GOOGLE_REDIRECT_URI = "http://localhost:8501"
+
+# Initial Admin Email (set this when first deploying)
+# This email will be automatically promoted to admin on first login
+INITIAL_ADMIN_EMAIL = "basuintcs@gmail.com"

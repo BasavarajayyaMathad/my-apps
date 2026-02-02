@@ -264,8 +264,15 @@ def render_setup_page():
     
     # Check if user is admin
     if not PermissionChecker.check_edit_tournament():
-        st.error("❌ You need Admin access to set up tournaments")
-        st.info("Contact an admin to set up a new tournament or create one with your admin account.")
+        st.info("👁️ You are viewing as a Viewer")
+        # Check if any tournament exists by trying to load from file
+        results_file = TournamentConfig.RESULTS_FILE
+        if os.path.exists(results_file):
+            st.success("✅ An active tournament exists. Tournament data is available.")
+            st.info("Contact an admin to set up a new tournament.")
+        else:
+            st.warning("⏳ No active tournaments exist.")
+            st.info("Contact an admin to set up and initialize a new tournament.")
         return
     
     col1, col2 = st.columns([2, 1])
@@ -319,11 +326,13 @@ def render_setup_page():
     if st.session_state.engine.teams:
         st.markdown("### ⏰ Schedule Settings")
         
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         
         # Use session state to persist date/time selections
         if 'selected_date' not in st.session_state:
             st.session_state.selected_date = datetime.now().date()
+        if 'selected_end_date' not in st.session_state:
+            st.session_state.selected_end_date = (datetime.now() + timedelta(days=1)).date()
         if 'selected_time' not in st.session_state:
             st.session_state.selected_time = datetime.now().replace(hour=9, minute=0).time()
         
@@ -336,6 +345,15 @@ def render_setup_page():
             st.session_state.selected_date = start_date
         
         with col2:
+            end_date = st.date_input(
+                "Tournament End Date",
+                value=st.session_state.selected_end_date,
+                key="tournament_end_date",
+                min_value=start_date
+            )
+            st.session_state.selected_end_date = end_date
+        
+        with col3:
             start_time = st.time_input(
                 "Start Time",
                 value=st.session_state.selected_time,
@@ -344,6 +362,11 @@ def render_setup_page():
             st.session_state.selected_time = start_time
         
         st.session_state.start_time = datetime.combine(start_date, start_time)
+        st.session_state.end_time = datetime.combine(end_date, st.session_state.selected_time)
+        
+        # Display tournament duration
+        duration_days = (end_date - start_date).days + 1
+        st.info(f"📅 Tournament Duration: {duration_days} day(s) (from {start_date.strftime('%d-%b-%Y')} to {end_date.strftime('%d-%b-%Y')})")
         
         st.markdown("---")
         
@@ -355,8 +378,8 @@ def render_setup_page():
             # Generate group stage fixtures
             st.session_state.engine.generate_group_stage_fixtures(st.session_state.groups)
             
-            # Schedule matches
-            st.session_state.engine.schedule_matches(st.session_state.start_time)
+            # Schedule matches with parallel execution (2 matches at same time)
+            st.session_state.engine.schedule_matches(st.session_state.start_time, parallel_matches=2)
             
             # Save initial state
             save_tournament()

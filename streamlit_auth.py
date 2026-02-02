@@ -151,6 +151,8 @@ class StreamlitAuthManager:
         st.markdown("## Login to Your Account")
         st.markdown("---")
         
+        st.info("ℹ️ **Note:** Your session expires when you refresh the page. Simply click the login button below to continue.")
+        
         # OAuth Providers
         available_providers = OAuthManager.get_available_providers()
         

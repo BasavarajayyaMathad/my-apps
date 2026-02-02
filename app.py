@@ -412,6 +412,12 @@ def render_group_stage():
     """Render group stage view"""
     st.markdown('<div class="main-header">📊 Group Stage</div>', unsafe_allow_html=True)
     
+    # Refresh button
+    col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])
+    with col1:
+        if st.button("🔄 Refresh Standings", use_container_width=True):
+            st.rerun()
+    
     # Group tabs
     groups = sorted(st.session_state.groups.keys())
     tabs = st.tabs([f"Group {g}" for g in groups] + ["All Matches"])

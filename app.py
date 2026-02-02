@@ -89,6 +89,24 @@ def init_session_state():
         st.session_state.current_stage = "setup"
     if 'start_time' not in st.session_state:
         st.session_state.start_time = None
+    
+    # Auto-load existing tournament if it exists and not yet loaded
+    if not st.session_state.tournament_initialized:
+        results_file = TournamentConfig.RESULTS_FILE
+        if os.path.exists(results_file):
+            try:
+                if st.session_state.engine.load_from_excel(results_file):
+                    st.session_state.tournament_initialized = True
+                    st.session_state.current_stage = "group"
+                    # Rebuild groups
+                    st.session_state.groups = {}
+                    for team in st.session_state.engine.teams:
+                        if team.group not in st.session_state.groups:
+                            st.session_state.groups[team.group] = []
+                        st.session_state.groups[team.group].append(team)
+            except Exception:
+                # If loading fails, keep tournament_initialized as False
+                pass
 
 
 def load_existing_tournament():

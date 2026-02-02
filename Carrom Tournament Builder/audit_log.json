@@ -1,0 +1,88 @@
+{
+  "AuditLog": [
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "User registered via google",
+      "Details": "",
+      "Timestamp": "2026-02-01T18:19:18.062821"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-01T18:19:18.066866"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-01T18:20:02.718626"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-01T18:22:34.887577"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-01T18:26:53.656081"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-01T18:27:39.076711"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-01T18:33:01.994675"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-01T18:40:45.467307"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-01T18:46:01.474135"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-01T19:00:06.012830"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-01T19:12:44.465121"
+    },
+    {
+      "User": "mukthayi@gmail.com",
+      "Action": "User registered via manual",
+      "Details": "",
+      "Timestamp": "2026-02-01T19:14:11.031773"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Added new user mukthayi@gmail.com as Admin",
+      "Details": "",
+      "Timestamp": "2026-02-01T19:14:11.034772"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Disabled user mukthayi@gmail.com",
+      "Details": "",
+      "Timestamp": "2026-02-01T19:14:27.988234"
+    }
+  ]
+}

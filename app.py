@@ -1,5 +1,5 @@
 """
-Carrom Tournament Builder - Streamlit Application
+AP Carrom Tournament 2026 - Streamlit Application
 Main application file for tournament management
 """
 
@@ -22,11 +22,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Initialize authentication
+# Initialize authentication EARLY
 StreamlitAuthManager.init_session_state()
 
 # Check authentication - redirect to login if not authenticated
 if not StreamlitAuthManager.is_authenticated():
+    # Always show login page (it handles OAuth callback internally)
     StreamlitAuthManager.render_login_page()
     st.stop()
 
@@ -89,6 +90,8 @@ def init_session_state():
         st.session_state.current_stage = "setup"
     if 'start_time' not in st.session_state:
         st.session_state.start_time = None
+    if 'teams_preview' not in st.session_state:
+        st.session_state.teams_preview = []
     
     # Auto-load existing tournament if it exists and not yet loaded
     if not st.session_state.tournament_initialized:
@@ -150,6 +153,7 @@ def reset_tournament():
     st.session_state.groups = {}
     st.session_state.current_stage = "setup"
     st.session_state.start_time = None
+    st.session_state.teams_preview = []
     
     # Clear date/time selections
     if 'selected_date' in st.session_state:
@@ -367,13 +371,106 @@ def render_setup_page():
             try:
                 df = pd.read_excel(uploaded_file)
                 st.success(f"✅ Found {len(df)} teams in the file")
-                st.dataframe(df, use_container_width=True)
                 
-                # Load teams
-                st.session_state.engine.load_teams_from_dataframe(df)
+                # Initialize session state for teams preview
+                if 'teams_preview' not in st.session_state:
+                    st.session_state.teams_preview = []
+                
+                if 'file_uploaded' not in st.session_state or st.session_state.file_uploaded != uploaded_file.name:
+                    # New file uploaded, load teams
+                    st.session_state.engine.load_teams_from_dataframe(df)
+                    
+                    # Store preview data in session state
+                    st.session_state.teams_preview = [
+                        {
+                            'team_id': team.team_id,
+                            'team_name': team.team_name,
+                            'participants': ', '.join(team.participants) if team.participants else ''
+                        }
+                        for team in st.session_state.engine.teams
+                    ]
+                    st.session_state.file_uploaded = uploaded_file.name
+                    st.rerun()
                 
             except Exception as e:
                 st.error(f"Error reading file: {e}")
+        
+        # Display editable teams table
+        if st.session_state.teams_preview:
+            st.markdown("#### 📝 Edit Teams Before Starting Tournament")
+            st.info("💡 Modify team names, participants, or delete teams. Changes will be saved when you initialize the tournament.")
+            
+            # Create editable table
+            st.markdown("##### Teams List")
+            
+            col1, col2, col3, col4 = st.columns([1, 2, 3, 1])
+            col1.markdown("**#**")
+            col2.markdown("**Team Name**")
+            col3.markdown("**Participants**")
+            col4.markdown("**Action**")
+            
+            st.divider()
+            
+            teams_to_delete = []
+            
+            for idx, team_preview in enumerate(st.session_state.teams_preview, 1):
+                col1, col2, col3, col4 = st.columns([1, 2, 3, 1])
+                
+                # Team number
+                col1.markdown(f"**{idx}**")
+                
+                # Team name (editable)
+                new_team_name = col2.text_input(
+                    "Team Name",
+                    value=team_preview['team_name'],
+                    key=f"team_name_{team_preview['team_id']}",
+                    label_visibility="collapsed"
+                )
+                team_preview['team_name'] = new_team_name
+                
+                # Participants (editable)
+                new_participants = col3.text_area(
+                    "Participants",
+                    value=team_preview['participants'],
+                    key=f"participants_{team_preview['team_id']}",
+                    label_visibility="collapsed",
+                    height=50
+                )
+                team_preview['participants'] = new_participants
+                
+                # Delete button
+                if col4.button("🗑️", key=f"delete_{team_preview['team_id']}", help="Delete this team"):
+                    teams_to_delete.append(idx - 1)
+            
+            st.divider()
+            
+            # Delete teams marked for deletion
+            if teams_to_delete:
+                for idx in sorted(teams_to_delete, reverse=True):
+                    st.session_state.teams_preview.pop(idx)
+                st.rerun()
+            
+            # Summary
+            st.markdown(f"### Summary: {len(st.session_state.teams_preview)} teams ready")
+            
+            # Save teams button (will be used when initializing tournament)
+            if st.button("✅ Save Teams & Continue", type="primary", use_container_width=True):
+                # Get the IDs of teams that should be kept (ones in teams_preview)
+                teams_to_keep_ids = {team_preview['team_id'] for team_preview in st.session_state.teams_preview}
+                
+                # Remove teams from engine that were deleted
+                st.session_state.engine.teams = [t for t in st.session_state.engine.teams if t.team_id in teams_to_keep_ids]
+                
+                # Update engine teams with edited data
+                for team_preview in st.session_state.teams_preview:
+                    team = next((t for t in st.session_state.engine.teams if t.team_id == team_preview['team_id']), None)
+                    if team:
+                        team.team_name = team_preview['team_name']
+                        # Parse participants - split by comma
+                        team.participants = [p.strip() for p in team_preview['participants'].split(',') if p.strip()]
+                
+                st.success(f"✅ {len(st.session_state.teams_preview)} teams saved successfully!")
+                st.session_state.teams_finalized = True
     
     with col2:
         st.markdown("### 📋 Sample Format")

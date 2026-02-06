@@ -16,7 +16,7 @@ class TournamentConfig:
     """Configuration class for tournament settings"""
     
     # Sport Name
-    SPORT_NAME = "Carrom"
+    SPORT_NAME = "AP Carrom Tournament 2026"
     
     # Match Duration in minutes
     MATCH_DURATION_MINUTES = int(os.getenv("MATCH_DURATION_MINUTES", 20))

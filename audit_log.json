@@ -371,6 +371,30 @@
       "Action": "Logged in via google",
       "Details": "",
       "Timestamp": "2026-02-06T00:33:51.001325"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-06T01:52:50.902286"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Reset tournament",
+      "Details": "",
+      "Timestamp": "2026-02-06T01:53:51.801795"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-06T01:56:11.929528"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-06T02:07:15.087725"
     }
   ]
 }

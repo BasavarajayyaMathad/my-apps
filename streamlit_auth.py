@@ -24,6 +24,7 @@ class StreamlitAuthManager:
             st.session_state[StreamlitAuthManager.SESSION_KEY_USER] = None
         if StreamlitAuthManager.SESSION_KEY_TOKEN not in st.session_state:
             st.session_state[StreamlitAuthManager.SESSION_KEY_TOKEN] = None
+
     
     @staticmethod
     def get_current_user() -> User:
@@ -65,34 +66,71 @@ class StreamlitAuthManager:
     def render_login_page():
         """Render login page"""
         st.set_page_config(
-            page_title=f"{TournamentConfig.SPORT_NAME} Tournament Manager - Login",
+            page_title="Welcome to AP Carrom Tournament 2026",
             page_icon="🏆",
-            layout="centered",
+            layout="wide",
         )
+        
+        # Load and encode the carrom board image
+        import base64
+        import os
+        
+        image_path = "assets/carrom_board.jpg"
+        image_base64 = ""
+        
+        if os.path.exists(image_path):
+            with open(image_path, "rb") as img_file:
+                image_base64 = base64.b64encode(img_file.read()).decode()
         
         st.markdown("""
         <style>
-            .login-container {
-                max-width: 400px;
-                margin: 100px auto;
-                padding: 2rem;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                border-radius: 10px;
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            body {
+                background: linear-gradient(135deg, #8B4513 0%, #D2691E 50%, #8B4513 100%);
+                min-height: 100vh;
             }
-            .login-header {
+            .main {
+                background: linear-gradient(135deg, #f5e6d3 0%, #e8d4b8 100%);
+            }
+            .stApp {
+                background: linear-gradient(135deg, #f5e6d3 0%, #e8d4b8 100%);
+            }
+            .welcome-container {
                 text-align: center;
-                color: white;
-                margin-bottom: 2rem;
+                padding: 3rem 2rem;
+                background: white;
+                border-radius: 20px;
+                box-shadow: 0 20px 60px rgba(139, 69, 19, 0.3);
+                margin: 2rem auto;
+                max-width: 700px;
             }
-            .login-header h1 {
-                font-size: 2.5rem;
-                margin: 0;
+            .welcome-title {
+                font-size: 3rem;
+                font-weight: bold;
+                color: #8B4513;
+                margin: 1rem 0;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
             }
-            .login-header p {
-                font-size: 0.9rem;
-                margin: 0.5rem 0 0 0;
-                opacity: 0.9;
+            .welcome-slogan {
+                font-size: 1.5rem;
+                color: #D2691E;
+                font-style: italic;
+                margin: 1.5rem 0;
+                font-weight: 500;
+            }
+            .carrom-image-container {
+                text-align: center;
+                margin: 2rem 0;
+            }
+            .carrom-image-container img {
+                max-width: 300px;
+                height: auto;
+                border-radius: 10px;
+                box-shadow: 0 10px 30px rgba(139, 69, 19, 0.2);
+            }
+            .login-section {
+                margin-top: 3rem;
+                padding-top: 2rem;
+                border-top: 2px solid #D2691E;
             }
             .oauth-buttons {
                 display: flex;
@@ -108,26 +146,46 @@ class StreamlitAuthManager:
                 cursor: pointer;
                 text-align: center;
                 transition: all 0.3s ease;
+                background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+                color: white;
             }
             .oauth-button:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+                box-shadow: 0 5px 15px rgba(139, 69, 19, 0.3);
             }
         </style>
         """, unsafe_allow_html=True)
         
-        col1, col2, col3 = st.columns([1, 2, 1])
+        # Display welcome section with image and title
+        col1, col2, col3 = st.columns([0.5, 3, 0.5])
         
         with col2:
-            st.markdown(f"""
-            <div class="login-container">
-                <div class="login-header">
-                    <h1>🏆</h1>
-                    <h1>{TournamentConfig.SPORT_NAME}</h1>
-                    <p>Tournament Manager</p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            if image_base64:
+                st.markdown(f"""
+                <div class="welcome-container">
+                    <div class="carrom-image-container">
+                        <img src="data:image/jpeg;base64,{image_base64}" alt="Carrom Board">
+                    </div>
+                    <div class="welcome-title">
+                        Welcome to<br>AP Carrom Tournament 2026
+                    </div>
+                    <div class="welcome-slogan">
+                        "Carrom: More Than a Game, It's a Vibe."
+                    </div>
+                    <div class="login-section">
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                <div class="welcome-container">
+                    <div class="welcome-title">
+                        Welcome to<br>AP Carrom Tournament 2026
+                    </div>
+                    <div class="welcome-slogan">
+                        "Carrom: More Than a Game, It's a Vibe."
+                    </div>
+                    <div class="login-section">
+                """, unsafe_allow_html=True)
+                st.warning("⚠️ Carrom board image not found in assets/carrom_board.jpg")
         
         # Check for OAuth code in URL FIRST - before rendering login buttons
         query_params = st.query_params
@@ -148,8 +206,7 @@ class StreamlitAuthManager:
                 st.rerun()
             return
         
-        st.markdown("## Login to Your Account")
-        st.markdown("---")
+        st.markdown("### Login to Your Account")
         
         st.info("ℹ️ **Note:** Your session expires when you refresh the page. Simply click the login button below to continue.")
         
@@ -157,8 +214,6 @@ class StreamlitAuthManager:
         available_providers = OAuthManager.get_available_providers()
         
         if available_providers:
-            st.markdown("### Login with Email")
-            
             cols = st.columns(len(available_providers))
             
             for idx, provider in enumerate(available_providers):
@@ -167,7 +222,7 @@ class StreamlitAuthManager:
                     if provider_oauth:
                         auth_url = provider_oauth.get_auth_url()
                         # Directly redirect to Google login when button is clicked
-                        st.link_button(f"🔑 {provider}", auth_url, use_container_width=True)
+                        st.link_button(f"🔑 Login with {provider}", auth_url, use_container_width=True)
         else:
             st.warning("""
             ⚠️ No OAuth providers configured!
@@ -181,6 +236,8 @@ class StreamlitAuthManager:
             
             See GOOGLE_OAUTH_SETUP.md for detailed setup instructions.
             """)
+        
+        st.markdown("</div></div>", unsafe_allow_html=True)
     
     @staticmethod
     def _handle_oauth_callback(provider: str, code: str):
@@ -223,27 +280,22 @@ class StreamlitAuthManager:
                 else:
                     st.success(f"✅ Welcome {user.name}! You have been registered as a Viewer.")
             else:
-                st.success(f"✅ Welcome back {user.name}!")
+                # User exists - show their role
+                role_display = "🔐 Admin" if user.is_admin() else "👁️ Viewer"
+                st.success(f"✅ Welcome back {user.name}! ({role_display})")
             
             # Create session
             if user:
                 user_manager.log_action(user_email, f"Logged in via {provider}")
                 StreamlitAuthManager.login_user(user, "")  # No token needed with JSON
                 
-                # Clear URL params and close old tab/redirect
+                # Clear URL params
                 st.query_params.clear()
                 
                 st.success("🎉 Login successful!")
                 st.balloons()
-                
-                # JavaScript to close the old tab after a brief delay
-                st.markdown("""
-                <script>
-                    setTimeout(function() {
-                        window.location.href = '/';
-                    }, 1500);
-                </script>
-                """, unsafe_allow_html=True)
+                time.sleep(1)
+                st.rerun()
         
         except Exception as e:
             st.error(f"❌ Authentication error: {str(e)}")

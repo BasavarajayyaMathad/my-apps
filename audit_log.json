@@ -83,6 +83,294 @@
       "Action": "Disabled user mukthayi@gmail.com",
       "Details": "",
       "Timestamp": "2026-02-01T19:14:27.988234"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-05T23:09:34.801114"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Reset tournament",
+      "Details": "",
+      "Timestamp": "2026-02-05T23:09:52.105648"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-05T23:27:17.554127"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-05T23:43:55.932938"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-05T23:45:31.662667"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-05T23:54:45.260334"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 1 score to 11-10, winner: Team1-Santhosh,Sudheer",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:00:58.004493"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 2 score to 11-10, winner: Team3-Naga,Sanjay Dasari",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:01:11.502450"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 3 score to 11-10, winner: Team1-Santhosh,Sudheer",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:01:22.705930"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 4 score to 0-0, winner: Team1-Santhosh,Sudheer",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:01:48.929824"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 5 score to 0-0, winner: Team2-Aarsh,Malik",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:01:56.502926"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 6 score to 0-0, winner: Team4-Karthick,Venkat",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:02:04.199459"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 7 score to 0-0, winner: Team2-Aarsh,Malik",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:02:12.122284"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 8 score to 0-0, winner: Team3-Naga,Sanjay Dasari",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:02:19.647023"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 9 score to 0-0, winner: Team3-Naga,Sanjay Dasari",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:02:27.730998"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 10 score to 0-0, winner: Team4-Karthick,Venkat",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:02:34.714192"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 11 score to 0-0, winner: Team5-Manjunath,Saket",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:02:52.703320"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 12 score to 0-0, winner: Team7-Tushar,Vijay",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:02:59.147289"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 13 score to 0-0, winner: Team5-Manjunath,Saket",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:03:05.618031"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 14 score to 0-0, winner: Team6-Sachith,V Ganesh",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:03:11.609221"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 15 score to 0-0, winner: Team6-Sachith,V Ganesh",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:03:19.575492"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 16 score to 0-0, winner: Team7-Tushar,Vijay",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:03:26.391405"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 17 score to 0-0, winner: Team9-Basav,Tamil",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:03:35.686391"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 18 score to 0-0, winner: Team11-Sai,Elan",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:03:44.615975"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 19 score to 0-0, winner: Team9-Basav,Tamil",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:03:51.383567"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 20 score to 0-0, winner: Team10-Vivek,Anand",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:03:59.100186"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 21 score to 0-0, winner: Team10-Vivek,Anand",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:04:06.215855"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 22 score to 0-0, winner: Team11-Sai,Elan",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:04:13.257946"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 23 score to 0-0, winner: Team13-Senthil,Praveen",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:04:38.213823"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 24 score to 0-0, winner: Team13-Senthil,Praveen",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:04:44.537651"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 25 score to 0-0, winner: Team16-Sanjay P,Mahendar",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:04:51.371786"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 26 score to 0-0, winner: Team14-Suriya,Azar",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:04:58.690531"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 27 score to 0-0, winner: Team16-Sanjay P,Mahendar",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:05:05.852503"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 28 score to 0-0, winner: Team15-Waseem,Girish",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:05:12.393562"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 29 score to 0-0, winner: Team1-Santhosh,Sudheer",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:07:22.989193"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 30 score to 0-0, winner: Team3-Naga,Sanjay Dasari",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:07:39.033538"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 31 score to 0-0, winner: Team5-Manjunath,Saket",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:07:57.145438"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 32 score to 0-0, winner: Team6-Sachith,V Ganesh",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:08:03.843789"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:10:42.610541"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 33 score to 0-0, winner: Team1-Santhosh,Sudheer",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:11:25.189986"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 34 score to 0-0, winner: Team3-Naga,Sanjay Dasari",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:11:38.599385"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 35 score to 0-0, winner: Team1-Santhosh,Sudheer",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:12:19.591294"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Updated match 37 score to 0-0, winner: Team3-Naga,Sanjay Dasari",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:13:46.807921"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:27:56.406662"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Uploaded new Rules of Game document",
+      "Details": "File: IngUnit_XXXXXXX9409_5775.pdf",
+      "Timestamp": "2026-02-06T00:28:29.470983"
+    },
+    {
+      "User": "basuintcs@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:32:56.280859"
+    },
+    {
+      "User": "basavarajayya.mathad@gmail.com",
+      "Action": "User registered via google",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:33:51.001325"
+    },
+    {
+      "User": "basavarajayya.mathad@gmail.com",
+      "Action": "Logged in via google",
+      "Details": "",
+      "Timestamp": "2026-02-06T00:33:51.001325"
     }
   ]
 }

@@ -127,7 +127,7 @@ class TournamentVisualizer:
     def create_tournament_bracket(self, matches_data: List[Dict]) -> go.Figure:
         """Create a tournament bracket visualization for knockout stages"""
         # Filter knockout matches
-        knockout_matches = [m for m in matches_data if m['stage'] in ['quarterfinal', 'semifinal', 'final']]
+        knockout_matches = [m for m in matches_data if m['stage'] in ['quarterfinal', 'semifinal', 'final', 'third_place']]
         
         if not knockout_matches:
             return None
@@ -135,8 +135,8 @@ class TournamentVisualizer:
         # Create a simple bracket visualization
         fig = go.Figure()
         
-        stages = ['quarterfinal', 'semifinal', 'final']
-        stage_positions = {'quarterfinal': 0, 'semifinal': 1, 'final': 2}
+        stages = ['quarterfinal', 'semifinal', 'final', 'third_place']
+        stage_positions = {'quarterfinal': 0, 'semifinal': 1, 'final': 2, 'third_place': 2.5}
         
         for stage in stages:
             stage_matches = [m for m in knockout_matches if m['stage'] == stage]
@@ -180,7 +180,7 @@ class TournamentVisualizer:
             xaxis=dict(
                 tickmode='array',
                 tickvals=list(range(len(stages))),
-                ticktext=[s.replace('final', ' Final').title() for s in stages],
+                ticktext=['Quarter Finals', 'Semi Finals', 'Final', '3rd Place'],
                 showgrid=False
             ),
             yaxis=dict(showticklabels=False, showgrid=False),

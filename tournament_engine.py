@@ -145,6 +145,42 @@ class TournamentEngine:
         
         return groups
     
+    def assign_teams_to_groups(self, group_assignments: Dict[str, List[int]]) -> Dict[str, List[Team]]:
+        """Assign teams to groups manually
+        
+        Args:
+            group_assignments: Dictionary with group names as keys and list of team IDs as values
+                              e.g., {'A': [1, 2], 'B': [3, 4], 'C': [5, 6], 'D': [7, 8]}
+        
+        Returns:
+            Dictionary of groups with their assigned teams
+        """
+        groups = {}
+        
+        # Clear existing group assignments
+        for team in self.teams:
+            team.group = None
+        
+        # Assign teams to groups
+        for group_name, team_ids in group_assignments.items():
+            groups[group_name] = []
+            for team_id in team_ids:
+                team = next((t for t in self.teams if t.team_id == team_id), None)
+                if team:
+                    team.group = group_name
+                    groups[group_name].append(team)
+        
+        # Initialize standings
+        for team in self.teams:
+            if team.group:
+                self.standings[team.team_id] = TeamStanding(
+                    team_id=team.team_id,
+                    team_name=team.team_name,
+                    group=team.group
+                )
+        
+        return groups
+    
     def generate_round_robin_fixtures(self, teams: List[Team], stage: str = "group", match_id_start: int = 1) -> List[Match]:
         """Generate round robin fixtures for a group of teams
         
@@ -363,23 +399,67 @@ class TournamentEngine:
         return matches
     
     def generate_quarterfinals(self) -> List[Match]:
-        """Generate quarterfinal fixtures from group stage qualifiers"""
-        top_teams = self.get_top_teams_from_groups()
+        """Generate quarterfinal fixtures with specific bracket: A1 vs C2, A2 vs C1, B1 vs D2, B2 vs D1"""
+        # Check if quarterfinals already exist
+        existing_qfs = [m for m in self.matches if m.stage == "quarterfinal"]
+        if existing_qfs:
+            return existing_qfs
         
-        # Flatten and get Team objects
-        qualified = []
-        for group, standings in sorted(top_teams.items()):
-            for standing in standings:
-                team = next((t for t in self.teams if t.team_id == standing.team_id), None)
-                if team:
-                    qualified.append(team)
+        # Get top 2 teams from each group
+        groups_standings = {}
+        for group in ['A', 'B', 'C', 'D']:
+            standings = self.get_group_standings(group)
+            groups_standings[group] = standings[:2] if len(standings) >= 2 else standings
         
-        return self.generate_knockout_fixtures(qualified, "quarterfinal")
+        # Create specific quarterfinal matchups
+        qf_pairs = [
+            ('A', 'C', 0, 1),  # A1 vs C2
+            ('A', 'C', 1, 0),  # A2 vs C1
+            ('B', 'D', 0, 1),  # B1 vs D2
+            ('B', 'D', 1, 0),  # B2 vs D1
+        ]
+        
+        matches = []
+        match_id_start = len(self.matches) + 1
+        
+        for idx, (group1, group2, pos1, pos2) in enumerate(qf_pairs):
+            if (group1 in groups_standings and len(groups_standings[group1]) > pos1 and
+                group2 in groups_standings and len(groups_standings[group2]) > pos2):
+                
+                standing1 = groups_standings[group1][pos1]
+                standing2 = groups_standings[group2][pos2]
+                
+                team1 = next((t for t in self.teams if t.team_id == standing1.team_id), None)
+                team2 = next((t for t in self.teams if t.team_id == standing2.team_id), None)
+                
+                if team1 and team2:
+                    match = Match(
+                        match_id=match_id_start + idx,
+                        team1_id=team1.team_id,
+                        team1_name=team1.team_name,
+                        team2_id=team2.team_id,
+                        team2_name=team2.team_name,
+                        stage="quarterfinal",
+                        group=None
+                    )
+                    matches.append(match)
+        
+        self.matches.extend(matches)
+        return matches
     
     def generate_semifinals(self) -> List[Match]:
-        """Generate semifinal fixtures from quarterfinal winners"""
+        """Generate semifinal fixtures with bracket: Q1 vs Q4, Q2 vs Q3"""
+        # Check if semifinals already exist
+        existing_semis = [m for m in self.matches if m.stage == "semifinal"]
+        if existing_semis:
+            return existing_semis
+        
         qf_matches = [m for m in self.matches if m.stage == "quarterfinal" and m.status == "completed"]
         
+        if len(qf_matches) < 4:
+            return []
+        
+        # Get winners in order (Q1, Q2, Q3, Q4)
         winners = []
         for match in qf_matches:
             if match.winner_id:
@@ -387,20 +467,98 @@ class TournamentEngine:
                 if team:
                     winners.append(team)
         
-        return self.generate_knockout_fixtures(winners, "semifinal")
+        if len(winners) < 4:
+            return []
+        
+        # Semifinal bracket: Q1 vs Q4, Q2 vs Q3
+        matches = []
+        match_id_start = len(self.matches) + 1
+        
+        # Match 1: Q1 vs Q4
+        match1 = Match(
+            match_id=match_id_start,
+            team1_id=winners[0].team_id,
+            team1_name=winners[0].team_name,
+            team2_id=winners[3].team_id,
+            team2_name=winners[3].team_name,
+            stage="semifinal",
+            group=None
+        )
+        matches.append(match1)
+        
+        # Match 2: Q2 vs Q3
+        match2 = Match(
+            match_id=match_id_start + 1,
+            team1_id=winners[1].team_id,
+            team1_name=winners[1].team_name,
+            team2_id=winners[2].team_id,
+            team2_name=winners[2].team_name,
+            stage="semifinal",
+            group=None
+        )
+        matches.append(match2)
+        
+        self.matches.extend(matches)
+        return matches
     
     def generate_final(self) -> List[Match]:
-        """Generate final fixture from semifinal winners"""
+        """Generate final fixture and 3rd place match from semifinal results"""
+        # Check if finals already exist
+        existing_finals = [m for m in self.matches if m.stage == "final"]
+        if existing_finals:
+            return existing_finals
+        
         sf_matches = [m for m in self.matches if m.stage == "semifinal" and m.status == "completed"]
         
+        if len(sf_matches) < 2:
+            return []
+        
         winners = []
+        losers = []
+        
         for match in sf_matches:
             if match.winner_id:
-                team = next((t for t in self.teams if t.team_id == match.winner_id), None)
-                if team:
-                    winners.append(team)
+                winner = next((t for t in self.teams if t.team_id == match.winner_id), None)
+                if winner:
+                    winners.append(winner)
+                
+                # Determine loser
+                loser_id = match.team2_id if match.winner_id == match.team1_id else match.team1_id
+                loser = next((t for t in self.teams if t.team_id == loser_id), None)
+                if loser:
+                    losers.append(loser)
         
-        return self.generate_knockout_fixtures(winners, "final")
+        matches = []
+        match_id_start = len(self.matches) + 1
+        
+        if len(winners) >= 2:
+            # Main final: F1 vs F2
+            final_match = Match(
+                match_id=match_id_start,
+                team1_id=winners[0].team_id,
+                team1_name=winners[0].team_name,
+                team2_id=winners[1].team_id,
+                team2_name=winners[1].team_name,
+                stage="final",
+                group=None
+            )
+            matches.append(final_match)
+        
+        if len(losers) >= 2:
+            # 3rd place match: loser of SF1 vs loser of SF2
+            third_place_match = Match(
+                match_id=match_id_start + 1,
+                team1_id=losers[0].team_id,
+                team1_name=losers[0].team_name,
+                team2_id=losers[1].team_id,
+                team2_name=losers[1].team_name,
+                stage="third_place",
+                group=None
+            )
+            matches.append(third_place_match)
+        
+        self.matches.extend(matches)
+        return matches
     
     def get_matches_by_stage(self, stage: str) -> List[Match]:
         """Get all matches for a specific stage"""

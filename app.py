@@ -268,12 +268,66 @@ def render_sidebar():
     
     st.sidebar.markdown("---")
     
+    # Rules of the Game section
+    if st.sidebar.button("📖 View Rules of Game", use_container_width=True):
+        st.session_state.show_rules = True
+    
+    st.sidebar.markdown("---")
+    
     # NLP Status
     nlp_status = "🟢 Active" if st.session_state.nlp.is_available() else "🔴 Not configured"
     st.sidebar.markdown(f"**NLP Status:** {nlp_status}")
     
     if not st.session_state.nlp.is_available():
         st.sidebar.info("Add OPENAI_API_KEY to .env file to enable NLP features")
+
+
+def render_rules_viewer():
+    """Display Rules of the Game for all logged-in users"""
+    import os
+    
+    rules_dir = "tournament_rules"
+    
+    # Check if rules directory exists and has files
+    if not os.path.exists(rules_dir):
+        st.info("📖 Rules of the Game document will be available here once uploaded by an admin.")
+        return
+    
+    files = os.listdir(rules_dir)
+    latest_files = [f for f in files if f.startswith("rules_latest")]
+    
+    if not latest_files:
+        st.info("📖 Rules of the Game document will be available here once uploaded by an admin.")
+        return
+    
+    latest_file = latest_files[0]
+    rules_path = os.path.join(rules_dir, latest_file)
+    file_size = os.path.getsize(rules_path) / 1024  # Size in KB
+    
+    st.markdown("### 📖 Rules of the Game")
+    st.info(f"📄 **Document:** {latest_file.replace('rules_latest.', '').upper()} ({file_size:.1f} KB)")
+    
+    # Display preview for text files
+    if latest_file.endswith(".txt"):
+        try:
+            with open(rules_path, 'r', encoding='utf-8', errors='ignore') as f:
+                rules_content = f.read()
+                st.text_area("Document Content:", value=rules_content, height=400, disabled=True)
+        except:
+            st.warning("Could not display text file content")
+    else:
+        st.markdown(f"**File Format:** {latest_file.split('.')[-1].upper()}")
+        st.info("Use the Download button below to view this document")
+    
+    # Download button
+    with open(rules_path, "rb") as f:
+        st.download_button(
+            label="📥 Download Rules Document",
+            data=f.read(),
+            file_name=latest_file.replace("rules_latest.", "Rules_of_Game."),
+            mime="application/octet-stream",
+            use_container_width=True
+        )
 
 
 def render_setup_page():
@@ -387,25 +441,129 @@ def render_setup_page():
         
         st.markdown("---")
         
+        # Manual group assignment
+        st.markdown("### 👥 Assign Teams to Groups")
+        
+        # Initialize session state for group assignments if not exists
+        if 'group_assignments_session' not in st.session_state:
+            st.session_state.group_assignments_session = {'A': [], 'B': [], 'C': [], 'D': []}
+        
+        # Initialize parallel matches config
+        if 'parallel_matches' not in st.session_state:
+            st.session_state.parallel_matches = 2
+        
+        num_groups = 4
+        group_names = ['A', 'B', 'C', 'D']
+        
+        # Collect all already-assigned teams
+        all_assigned_team_ids = []
+        for team_ids in st.session_state.group_assignments_session.values():
+            all_assigned_team_ids.extend(team_ids)
+        
+        # Create list of unassigned teams
+        unassigned_teams = [t for t in st.session_state.engine.teams if t.team_id not in all_assigned_team_ids]
+        unassigned_team_names = [t.team_name for t in unassigned_teams]
+        
+        # Dropdown View Only
+        st.markdown("#### Select Teams by Group")
+        
+        cols = st.columns(num_groups)
+        
+        for col_idx, group_name in enumerate(group_names):
+            with cols[col_idx]:
+                st.markdown(f"#### Group {group_name}")
+                
+                # Get available teams for this group (exclude already selected)
+                group_team_ids = st.session_state.group_assignments_session[group_name]
+                available_for_group = [t for t in st.session_state.engine.teams 
+                                     if t.team_id not in all_assigned_team_ids or t.team_id in group_team_ids]
+                available_names = [t.team_name for t in available_for_group]
+                
+                # Current selection
+                current_selection = [next((t.team_name for t in st.session_state.engine.teams 
+                                          if t.team_id == tid), None) 
+                                    for tid in group_team_ids]
+                current_selection = [name for name in current_selection if name is not None]
+                
+                selected_teams = st.multiselect(
+                    f"Group {group_name}",
+                    options=available_names,
+                    default=current_selection,
+                    key=f"group_{group_name}_select",
+                    help=f"Select teams for Group {group_name}"
+                )
+                
+                # Update session state
+                st.session_state.group_assignments_session[group_name] = [
+                    next((t.team_id for t in st.session_state.engine.teams if t.team_name == team_name), None)
+                    for team_name in selected_teams
+                ]
+                st.session_state.group_assignments_session[group_name] = [
+                    tid for tid in st.session_state.group_assignments_session[group_name] if tid is not None
+                ]
+                
+                # Clear button for individual group
+                if st.button(f"🗑️ Clear Group {group_name}", key=f"clear_{group_name}", use_container_width=True):
+                    st.session_state.group_assignments_session[group_name] = []
+                    st.rerun()
+        
+        # Clear all groups button
+        st.divider()
+        if st.button("🗑️ Clear All Groups", type="secondary", use_container_width=True):
+            st.session_state.group_assignments_session = {'A': [], 'B': [], 'C': [], 'D': []}
+            st.rerun()
+        
+        st.divider()
+        
+        # Parallel matches configuration
+        st.markdown("#### ⚡ Tournament Settings")
+        st.session_state.parallel_matches = st.number_input(
+            "Maximum matches running in parallel",
+            min_value=1,
+            max_value=10,
+            value=st.session_state.parallel_matches,
+            step=1,
+            help="Number of boards/courts available. Duration = (total_matches / parallel) × match_duration"
+        )
+        
+        st.divider()
+        
         # Initialize tournament button
         if st.button("🚀 Initialize Tournament", type="primary", use_container_width=True):
-            # Divide into groups
-            st.session_state.groups = st.session_state.engine.divide_into_groups(shuffle=True)
+            # Check if all teams are assigned
+            all_assigned_teams = []
+            for team_ids in st.session_state.group_assignments_session.values():
+                all_assigned_teams.extend(team_ids)
             
-            # Generate group stage fixtures
-            st.session_state.engine.generate_group_stage_fixtures(st.session_state.groups)
+            # Debug: Show what we're checking
+            total_teams = len(st.session_state.engine.teams)
+            assigned_teams = len(all_assigned_teams)
+            unique_teams = len(set(all_assigned_teams))
             
-            # Schedule matches with parallel execution (2 matches at same time)
-            st.session_state.engine.schedule_matches(st.session_state.start_time, parallel_matches=2)
-            
-            # Save initial state
-            save_tournament()
-            
-            st.session_state.tournament_initialized = True
-            st.session_state.current_stage = "group"
-            
-            st.success("✅ Tournament initialized successfully!")
-            st.rerun()
+            if assigned_teams != total_teams:
+                st.error(f"❌ Please assign ALL teams to groups! ({assigned_teams}/{total_teams} assigned)")
+            elif unique_teams != assigned_teams:
+                st.error("❌ Each team can only be in one group!")
+            elif unique_teams != total_teams:
+                st.error(f"❌ Teams mismatch: {unique_teams} unique vs {total_teams} total")
+            else:
+                # Assign teams to groups
+                st.session_state.groups = st.session_state.engine.assign_teams_to_groups(st.session_state.group_assignments_session)
+                
+                # Generate group stage fixtures
+                st.session_state.engine.generate_group_stage_fixtures(st.session_state.groups)
+                
+                # Schedule matches with user-specified parallel matches
+                st.session_state.engine.schedule_matches(st.session_state.start_time, parallel_matches=st.session_state.parallel_matches)
+                
+                # Save initial state
+                save_tournament()
+                
+                st.session_state.tournament_initialized = True
+                st.session_state.current_stage = "group"
+                
+                st.success("✅ Tournament initialized successfully!")
+                st.rerun()
 
 
 def render_group_stage():
@@ -490,7 +648,7 @@ def render_group_view(group: str):
             
             # Standings chart
             fig = st.session_state.viz.create_standings_chart(standings_data, group)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=f"standings_chart_{group}")
         else:
             st.warning(f"No standings data found for Group {group}")
     
@@ -740,11 +898,11 @@ def render_knockout_stage(stage: str):
     
     # Bracket visualization
     all_knockout = [m.to_dict() for m in st.session_state.engine.matches 
-                    if m.stage in ['quarterfinal', 'semifinal', 'final']]
+                    if m.stage in ['quarterfinal', 'semifinal', 'final', 'third_place']]
     if all_knockout:
         fig = st.session_state.viz.create_tournament_bracket(all_knockout)
         if fig:
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=f"bracket_{stage}")
     
     st.markdown("---")
     
@@ -777,10 +935,56 @@ def render_knockout_stage(stage: str):
                 st.session_state.current_stage = next_stage[0]
                 st.rerun()
         elif stage == "final":
-            final_match = matches[0]
-            if final_match.winner_name:
+            # Show final results
+            final_matches = [m for m in matches if m.stage == "final"]
+            third_place_matches = [m for m in matches if m.stage == "third_place"]
+            
+            if final_matches and final_matches[0].winner_name:
                 st.balloons()
-                st.markdown(f"## 🏆🎉 Champion: {final_match.winner_name}! 🎉🏆")
+                
+                # Get champion info
+                champion = final_matches[0].winner_name
+                runner_up = final_matches[0].team2_name if final_matches[0].winner_id == final_matches[0].team1_id else final_matches[0].team1_name
+                
+                st.markdown("---")
+                st.markdown("### 🏆 TOURNAMENT FINAL RESULTS")
+                st.markdown("---")
+                
+                # Create columns for podium display
+                col1, col2, col3 = st.columns(3)
+                
+                # Runner-up (2nd place) - left
+                with col1:
+                    st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+                    st.markdown("### 🥈 Runner-Up")
+                    st.markdown(f"## {runner_up}")
+                    st.markdown(f"Score: {final_matches[0].team2_score if final_matches[0].winner_id == final_matches[0].team1_id else final_matches[0].team1_score}")
+                    st.markdown('</div>', unsafe_allow_html=True)
+                
+                # Champion - center
+                with col2:
+                    st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+                    st.markdown("### 🥇 CHAMPION")
+                    st.markdown(f"## {champion}")
+                    st.markdown(f"Score: {final_matches[0].team1_score if final_matches[0].winner_id == final_matches[0].team1_id else final_matches[0].team2_score}")
+                    st.markdown('</div>', unsafe_allow_html=True)
+                
+                # Third place - right
+                with col3:
+                    st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+                    if third_place_matches and third_place_matches[0].winner_name:
+                        st.markdown("### 🥉 Third Place")
+                        st.markdown(f"## {third_place_matches[0].winner_name}")
+                        st.markdown(f"Score: {third_place_matches[0].team1_score if third_place_matches[0].winner_id == third_place_matches[0].team1_id else third_place_matches[0].team2_score}")
+                    else:
+                        st.markdown("### 🥉 Third Place")
+                        st.markdown("*Pending*")
+                    st.markdown('</div>', unsafe_allow_html=True)
+            elif not final_matches:
+                st.info("Final match not yet generated")
+            elif not final_matches[0].winner_name:
+                st.info("Final match result pending")
+
 
 
 def render_nlp_interface():
@@ -873,7 +1077,7 @@ def render_schedule_view():
     # Timeline visualization
     fig = st.session_state.viz.create_match_timeline(matches_data)
     if fig:
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="match_timeline")
     
     # Schedule table
     df = pd.DataFrame(matches_data)
@@ -898,12 +1102,12 @@ def render_analytics():
     with col1:
         # Win/Loss chart
         fig = st.session_state.viz.create_win_loss_chart(standings_data)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="win_loss_chart")
     
     with col2:
         # Score difference chart
         fig = st.session_state.viz.create_score_difference_chart(standings_data)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="score_diff_chart")
     
     # Summary metrics
     st.markdown("### 📊 Summary")
@@ -951,6 +1155,235 @@ def save_payment_data(data):
     except Exception as e:
         st.error(f"Error saving payment data: {e}")
         return False
+
+
+def render_export_data():
+    """Render data export interface"""
+    st.markdown('<div class="main-header">📥 Export Tournament Data</div>', unsafe_allow_html=True)
+    
+    if not st.session_state.tournament_initialized:
+        st.warning("⚠️ Tournament not initialized yet!")
+        return
+    
+    st.markdown("### Export Options")
+    export_type = st.selectbox(
+        "Select data to export",
+        ["Groups", "Group Fixtures", "Standings", "All Matches", "Knockouts", "Complete Tournament"]
+    )
+    
+    file_format = st.selectbox("File format", ["CSV", "Excel"])
+    
+    export_col1, export_col2 = st.columns(2)
+    
+    with export_col1:
+        if st.button("📥 Export", use_container_width=True, type="primary"):
+            try:
+                import pandas as pd
+                from io import BytesIO
+                
+                data_exported = False
+                
+                if export_type == "Groups":
+                    # Export groups and teams
+                    data = []
+                    for group_name, teams in st.session_state.groups.items():
+                        for team in teams:
+                            data.append({
+                                'Group': group_name,
+                                'Team ID': team.team_id,
+                                'Team Name': team.team_name,
+                                'Members': team.members_count if hasattr(team, 'members_count') else 'N/A'
+                            })
+                    df = pd.DataFrame(data)
+                    data_exported = True
+                    
+                elif export_type == "Group Fixtures":
+                    # Export only group stage matches
+                    data = []
+                    group_matches = [m for m in st.session_state.engine.matches if m.stage == "group"]
+                    for match in group_matches:
+                        data.append({
+                            'Match ID': match.match_id,
+                            'Group': match.group if match.group else 'N/A',
+                            'Team 1': match.team1_name,
+                            'Team 2': match.team2_name,
+                            'Scheduled Time': match.scheduled_time.strftime('%d-%b-%Y %H:%M') if match.scheduled_time else 'N/A',
+                            'Status': match.status,
+                            'Winner': match.winner_name if match.winner_name else 'Pending'
+                        })
+                    df = pd.DataFrame(data)
+                    data_exported = True
+                    
+                elif export_type == "Standings":
+                    # Export group standings
+                    data = []
+                    
+                    # Get all standings grouped by group
+                    groups = set(s.group for s in st.session_state.engine.standings.values() if s.group)
+                    
+                    for group in sorted(groups):
+                        group_standings = st.session_state.engine.get_group_standings(group)
+                        for idx, standing in enumerate(group_standings, 1):
+                            data.append({
+                                'Group': group,
+                                'Rank': idx,
+                                'Team': standing.team_name,
+                                'Played': standing.matches_played,
+                                'Won': standing.wins,
+                                'Drawn': standing.draws,
+                                'Lost': standing.losses,
+                                'Points': standing.points
+                            })
+                    df = pd.DataFrame(data)
+                    data_exported = True
+                    
+                elif export_type == "All Matches":
+                    # Export all matches
+                    data = []
+                    for match in st.session_state.engine.matches:
+                        data.append({
+                            'Match ID': match.match_id,
+                            'Stage': match.stage,
+                            'Team 1': match.team1_name,
+                            'Team 2': match.team2_name,
+                            'Scheduled Time': match.scheduled_time.strftime('%d-%b-%Y %H:%M') if match.scheduled_time else 'N/A',
+                            'Status': match.status,
+                            'Team 1 Score': match.team1_score if match.team1_score is not None else '-',
+                            'Team 2 Score': match.team2_score if match.team2_score is not None else '-',
+                            'Winner': match.winner_name if match.winner_name else 'Pending'
+                        })
+                    df = pd.DataFrame(data)
+                    data_exported = True
+                    
+                elif export_type == "Knockouts":
+                    # Export knockout stage matches only
+                    data = []
+                    knockout_matches = [m for m in st.session_state.engine.matches if m.stage != "group"]
+                    for match in knockout_matches:
+                        data.append({
+                            'Stage': match.stage.upper(),
+                            'Match ID': match.match_id,
+                            'Team 1': match.team1_name,
+                            'Team 2': match.team2_name,
+                            'Scheduled Time': match.scheduled_time.strftime('%d-%b-%Y %H:%M') if match.scheduled_time else 'N/A',
+                            'Status': match.status,
+                            'Team 1 Score': match.team1_score if match.team1_score is not None else '-',
+                            'Team 2 Score': match.team2_score if match.team2_score is not None else '-',
+                            'Winner': match.winner_name if match.winner_name else 'Pending'
+                        })
+                    df = pd.DataFrame(data)
+                    data_exported = True
+                    
+                elif export_type == "Complete Tournament":
+                    # Export everything
+                    # This will return a dict with multiple sheets
+                    export_dict = {}
+                    
+                    # Groups
+                    groups_data = []
+                    for group_name, teams in st.session_state.groups.items():
+                        for team in teams:
+                            groups_data.append({
+                                'Group': group_name,
+                                'Team Name': team.team_name,
+                                'Members': team.members_count if hasattr(team, 'members_count') else 'N/A'
+                            })
+                    export_dict['Groups'] = pd.DataFrame(groups_data)
+                    
+                    # All Matches
+                    matches_data = []
+                    for match in st.session_state.engine.matches:
+                        matches_data.append({
+                            'Stage': match.stage,
+                            'Team 1': match.team1_name,
+                            'Team 2': match.team2_name,
+                            'Time': match.scheduled_time.strftime('%d-%b-%Y %H:%M') if match.scheduled_time else 'N/A',
+                            'Status': match.status,
+                            'Score 1': match.team1_score if match.team1_score is not None else '-',
+                            'Score 2': match.team2_score if match.team2_score is not None else '-',
+                            'Winner': match.winner_name if match.winner_name else 'Pending'
+                        })
+                    export_dict['Matches'] = pd.DataFrame(matches_data)
+                    
+                    # Standings
+                    standings_data = []
+                    groups = set(s.group for s in st.session_state.engine.standings.values() if s.group)
+                    
+                    for group in sorted(groups):
+                        group_standings = st.session_state.engine.get_group_standings(group)
+                        for idx, standing in enumerate(group_standings, 1):
+                            standings_data.append({
+                                'Group': group,
+                                'Rank': idx,
+                                'Team': standing.team_name,
+                                'Wins': standing.wins,
+                                'Draws': standing.draws,
+                                'Losses': standing.losses,
+                                'Points': standing.points
+                            })
+                    export_dict['Standings'] = pd.DataFrame(standings_data)
+                    
+                    # Export to Excel with multiple sheets
+                    if file_format == "Excel":
+                        output = BytesIO()
+                        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                            for sheet_name, df in export_dict.items():
+                                df.to_excel(writer, sheet_name=sheet_name, index=False)
+                        output.seek(0)
+                        st.download_button(
+                            label="📥 Download Excel File",
+                            data=output.getvalue(),
+                            file_name=f"tournament_complete_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                    else:
+                        # CSV format - multiple files
+                        st.info("Complete tournament export in CSV format includes multiple files (Groups, Matches, Standings)")
+                        for sheet_name, df in export_dict.items():
+                            csv = df.to_csv(index=False)
+                            st.download_button(
+                                label=f"📥 Download {sheet_name}",
+                                data=csv,
+                                file_name=f"{sheet_name.lower()}_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                                mime="text/csv"
+                            )
+                    data_exported = True
+                
+                if data_exported and export_type != "Complete Tournament":
+                    # For single-sheet exports
+                    if file_format == "Excel":
+                        output = BytesIO()
+                        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                            df.to_excel(writer, sheet_name='Data', index=False)
+                        output.seek(0)
+                        st.download_button(
+                            label="📥 Download Excel File",
+                            data=output.getvalue(),
+                            file_name=f"{export_type.lower().replace(' ', '_')}_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                    else:
+                        csv = df.to_csv(index=False)
+                        st.download_button(
+                            label="📥 Download CSV File",
+                            data=csv,
+                            file_name=f"{export_type.lower().replace(' ', '_')}_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                            mime="text/csv"
+                        )
+                    
+                    st.success(f"✅ {export_type} exported successfully!")
+                    
+            except ImportError:
+                st.error("❌ pandas or openpyxl not installed. Install with: pip install pandas openpyxl")
+            except Exception as e:
+                st.error(f"❌ Error exporting data: {e}")
+    
+    with export_col2:
+        st.info("""
+        **Export Formats:**
+        - **CSV**: Good for spreadsheets and data analysis
+        - **Excel**: Better formatting and multiple sheets
+        """)
 
 
 def render_payment_tracking():
@@ -1081,7 +1514,7 @@ def render_admin_panel():
     user_manager = UserManager()
     
     # Admin tabs
-    admin_tabs = st.tabs(["👥 User Management", "� Payments", "�📋 Audit Log"])
+    admin_tabs = st.tabs(["👥 User Management", "💰 Payments", "📋 Audit Log", "📖 Rules of Game"])
     
     with admin_tabs[0]:
         st.markdown("### 👥 Manage Users")
@@ -1229,12 +1662,137 @@ def render_admin_panel():
             )
         else:
             st.info("No audit log entries found")
+    
+    with admin_tabs[3]:
+        st.markdown("### 📖 Rules of Game Management")
+        
+        import os
+        rules_dir = "tournament_rules"
+        if not os.path.exists(rules_dir):
+            os.makedirs(rules_dir)
+        
+        # File upload section
+        st.markdown("#### 📤 Upload Rules Document")
+        
+        uploaded_file = st.file_uploader(
+            "Upload Rules of the Game (PDF, DOCX, TXT)",
+            type=["pdf", "docx", "doc", "txt", "xlsx", "xls"],
+            key="rules_upload"
+        )
+        
+        if uploaded_file is not None:
+            if st.button("💾 Save Rules Document", type="primary", use_container_width=True):
+                try:
+                    # Save file to rules directory with timestamp
+                    from datetime import datetime
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    file_extension = uploaded_file.name.split('.')[-1]
+                    saved_filename = f"rules_{timestamp}.{file_extension}"
+                    rules_path = os.path.join(rules_dir, saved_filename)
+                    
+                    # Save the uploaded file
+                    with open(rules_path, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+                    
+                    # Create a symlink to "rules_latest" for quick access
+                    latest_path = os.path.join(rules_dir, f"rules_latest.{file_extension}")
+                    if os.path.exists(latest_path):
+                        os.remove(latest_path)
+                    
+                    # On Windows, create a copy instead of symlink
+                    import shutil
+                    shutil.copy(rules_path, latest_path)
+                    
+                    st.success(f"✅ Rules document saved successfully: {uploaded_file.name}")
+                    user_manager.log_action(
+                        StreamlitAuthManager.get_current_user().email if StreamlitAuthManager.get_current_user() else "Admin",
+                        "Uploaded new Rules of Game document",
+                        f"File: {uploaded_file.name}"
+                    )
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Error saving file: {e}")
+        
+        st.divider()
+        
+        # Current rules document
+        st.markdown("#### 📄 Current Rules Document")
+        
+        # Find latest rules file
+        if os.path.exists(rules_dir):
+            files = os.listdir(rules_dir)
+            latest_files = [f for f in files if f.startswith("rules_latest")]
+            
+            if latest_files:
+                latest_file = latest_files[0]
+                rules_path = os.path.join(rules_dir, latest_file)
+                file_size = os.path.getsize(rules_path) / 1024  # Size in KB
+                
+                st.info(f"📄 **{latest_file}** ({file_size:.1f} KB)")
+                
+                # Display preview for text files
+                if latest_file.endswith(".txt"):
+                    try:
+                        with open(rules_path, 'r', encoding='utf-8', errors='ignore') as f:
+                            rules_content = f.read()
+                            st.text_area("Document Preview:", value=rules_content, height=300, disabled=True)
+                    except:
+                        st.warning("Could not preview text file")
+                
+                # Download button
+                with open(rules_path, "rb") as f:
+                    st.download_button(
+                        label="📥 Download Current Rules",
+                        data=f.read(),
+                        file_name=latest_file,
+                        mime="application/octet-stream",
+                        use_container_width=True
+                    )
+                
+                st.divider()
+                
+                # Version history
+                st.markdown("#### 📋 Version History")
+                all_rules_files = sorted([f for f in files if f.startswith("rules_") and not f.startswith("rules_latest")], reverse=True)
+                
+                if all_rules_files:
+                    history_data = []
+                    for file in all_rules_files[:10]:  # Show last 10 versions
+                        file_path = os.path.join(rules_dir, file)
+                        file_size = os.path.getsize(file_path) / 1024
+                        history_data.append({
+                            "Version": file,
+                            "Size (KB)": f"{file_size:.1f}",
+                        })
+                    
+                    history_df = pd.DataFrame(history_data)
+                    st.dataframe(history_df, use_container_width=True, hide_index=True)
+                else:
+                    st.info("No previous versions found")
+            else:
+                st.warning("⚠️ No rules document has been uploaded yet")
+        else:
+            st.warning("⚠️ No rules document has been uploaded yet")
 
 
 def main():
     """Main application entry point"""
     init_session_state()
     render_sidebar()
+    
+    # Check if show_rules flag is set
+    if st.session_state.get('show_rules', False):
+        st.markdown('<div class="main-header">📖 Rules of the Game</div>', unsafe_allow_html=True)
+        
+        col1, col2 = st.columns([10, 1])
+        with col2:
+            if st.button("✕", help="Close Rules"):
+                st.session_state.show_rules = False
+                st.rerun()
+        
+        render_rules_viewer()
+        st.markdown("---")
+        return
     
     # Navigation
     if not st.session_state.tournament_initialized:
@@ -1248,6 +1806,7 @@ def main():
             "👑 Final",
             "📅 Schedule",
             "📈 Analytics",
+            "� Export Data",
             "💬 NLP Commands"
         ]
         
@@ -1277,11 +1836,14 @@ def main():
             render_analytics()
         
         with tabs[6]:
+            render_export_data()
+        
+        with tabs[7]:
             render_nlp_interface()
         
         # Admin tab (if user is admin)
         if PermissionChecker.check_manage_users():
-            with tabs[7]:
+            with tabs[8]:
                 render_admin_panel()
 
 
